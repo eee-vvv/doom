@@ -44,6 +44,7 @@
 (setq diary-file "~/org/diary")
 (setq org-agenda-diary-file "~/org/diary")
 (setq org-agenda-include-diary t)
+(setq org-roam-directory "~/org/roam/")
 
 ;; evie's stuff below
 
