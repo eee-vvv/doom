@@ -8,3 +8,10 @@
 
 (map! :leader
       :desc "Rebuild NixOS" "o r" #'evie/rebuild)
+
+(defun evie/browse-nixos-config ()
+  (interactive)
+  (doom-project-browse "~/nixos/"))
+
+(map! :leader
+      :desc "Browse NixOS config" "f n" #'evie/browse-nixos-config)
