@@ -41,6 +41,9 @@
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
+(setq diary-file "~/org/diary")
+(setq org-agenda-diary-file "~/org/diary")
+(setq org-agenda-include-diary t)
 
 ;; evie's stuff below
 
@@ -77,5 +80,3 @@
 ;;
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
-
-;; evie's own additions below
