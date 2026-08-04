@@ -28,19 +28,19 @@
   (async-shell-command
    (format "sudo wg-quick down /home/evie/.config/wireguard/pi-t480.conf")))
 
-(defun evie/big-wg-status ()
+(defun evie/thinkcentre-wg-status ()
   (interactive)
-  (let ((default-directory "/ssh:big:/home/evie/"))
+  (let ((default-directory "/ssh:thinkcentre:/home/evie/"))
     (async-shell-command "sudo wg")))
 
-(defun evie/big-wg-up ()
+(defun evie/thinkcentre-wg-up ()
   (interactive)
-  (let ((default-directory "/ssh:big:/home/evie/"))
+  (let ((default-directory "/ssh:thinkcentre:/home/evie/"))
     (async-shell-command "sudo wg-quick up ny")))
 
-(defun evie/big-wg-down ()
+(defun evie/thinkcentre-wg-down ()
   (interactive)
-  (let ((default-directory "/ssh:big:/home/evie/"))
+  (let ((default-directory "/ssh:thinkcentre:/home/evie/"))
     (async-shell-command
      "sudo wg-quick down ny && sudo systemctl start transmission-daemon")))
 
@@ -51,7 +51,7 @@
         :desc "Status" "s" #'evie/pi-wg-status
         :desc "Turn on home tunnel" "u" #'evie/pi-wg-up
         :desc "Turn off home tunnel" "d" #'evie/pi-wg-down)
-       (:prefix ("b" . "big (server)")
-        :desc "Status" "s" #'evie/big-wg-status
-        :desc "Turn on big vpn" "u" #'evie/big-wg-up
-        :desc "Turn off big vpn" "d" #'evie/big-wg-down)))
+       (:prefix ("b" . "thinkcentre")
+        :desc "Status" "s" #'evie/thinkcentre-wg-status
+        :desc "Turn on thinkcentre vpn" "u" #'evie/thinkcentre-wg-up
+        :desc "Turn off thinkcentre vpn" "d" #'evie/thinkcentre-wg-down)))
