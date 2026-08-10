@@ -46,10 +46,35 @@
 (setq org-agenda-include-diary t)
 (setq org-roam-directory "~/org/roam/")
 
+(setq org-roam-dailies-capture-templates
+      '(("d" "default" entry "* %<%I:%M %p> %?"
+         :target (file+head "%<%Y-%m-%d>.org"
+                            "#+title: %<%Y-%m-%d>\n"))))
+
+(setq org-agenda-skip-scheduled-if-done t)
+(setq org-agenda-skip-deadline-if-done t)
+
+;; Type French accents in org files via ASCII sequences, e.g. e' -> é,
+;; e` -> è, c, -> ç. Starts off; toggle with C-\ while in an org buffer.
+(add-hook 'org-mode-hook
+          (lambda () (setq input-method-title "FR")
+            (setq-local default-input-method "french-postfix")))
+
 ;; evie's stuff below
 
 ;; imports
 (load! "nix")
+
+;; Capture everything to todo.org's Inbox as a TODO item (not Doom's default
+;; checkbox), so it participates in agenda TODO views/state cycling like the
+;; rest of my org files. Refile (SPC m r) out anything that isn't a genuine
+;; one-off todo during review.
+(after! org
+  (setq org-capture-templates
+        (cons '("t" "Inbox" entry
+                (file+headline +org-capture-todo-file "Inbox")
+                "* TODO %?\n%i" :prepend t)
+              (assoc-delete-all "t" org-capture-templates))))
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `with-eval-after-load' block, otherwise Doom's defaults may override your

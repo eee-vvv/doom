@@ -5,7 +5,8 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(org-agenda-files
-   '("~/org/school/fall26.org" "/home/evie/org/car.org"
+   '("~/org/personal.org" "/home/evie/org/todo.org"
+     "/home/evie/org/school/fall26.org" "/home/evie/org/car.org"
      "/home/evie/org/declutter.org" "/home/evie/org/editing.org"
      "/home/evie/org/finance.org" "/home/evie/org/fitness.org"
      "/home/evie/org/four_month_plan.org" "/home/evie/org/france-guide.org"
