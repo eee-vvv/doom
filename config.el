@@ -60,8 +60,6 @@
           (lambda () (setq input-method-title "FR")
             (setq-local default-input-method "french-postfix")))
 
-;; evie's stuff below
-
 ;; imports
 (load! "nix")
 
