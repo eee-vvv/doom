@@ -19,7 +19,10 @@
      "/home/evie/org/projects.org" "/home/evie/org/reading.org"
      "/home/evie/org/staffportal.org" "/home/evie/org/summer.org"
      "/home/evie/org/unisys.org" "/home/evie/org/weeks.org"
-     "/home/evie/org/winston.org")))
+     "/home/evie/org/winston.org"))
+ '(safe-local-variable-directories
+   '("/home/evie/staff-portal/" "/home/evie/.config/doom/"
+     "/home/evie/.config/emacs/")))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
