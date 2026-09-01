@@ -22,7 +22,7 @@
 ;; accept. For example:
 ;;
 (setq doom-font (font-spec :family "Fira Code" :size 16 :weight 'normal)
-     doom-variable-pitch-font (font-spec :family "Fira Code" :size 16))
+      doom-variable-pitch-font (font-spec :family "Fira Code" :size 16))
 ;;
 ;; If you or Emacs can't find your font, use 'M-x describe-font' to look them
 ;; up, `M-x eval-region' to execute elisp code, and 'M-x doom/reload-font' to
@@ -37,6 +37,16 @@
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type 'relative)
+
+;; modeline
+(after! doom-modeline
+  (setq display-time-format "%H:%M"
+        display-time-default-load-average nil)
+  (display-time-mode 1)
+  (display-battery-mode 1))
+
+;; dashboard stuff
+(setq fancy-splash-image (concat doom-user-dir "emacs-gnu-logo.png"))
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
