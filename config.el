@@ -69,6 +69,10 @@
 (after! org
   (require 'org-habit))
 
+(after! org-habit
+  (setq org-habit-preceding-days 28
+        org-habit-following-days 2))
+
 ;; Type French accents in org files via ASCII sequences, e.g. e' -> é,
 ;; e` -> è, c, -> ç. Starts off; toggle with C-\ while in an org buffer.
 (add-hook 'org-mode-hook
