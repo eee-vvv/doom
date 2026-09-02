@@ -64,6 +64,11 @@
 (setq org-agenda-skip-scheduled-if-done t)
 (setq org-agenda-skip-deadline-if-done t)
 
+;; org-habit: consistency graphs in the agenda for tasks with a
+;; SCHEDULED repeater and a :STYLE: habit property.
+(after! org
+  (require 'org-habit))
+
 ;; Type French accents in org files via ASCII sequences, e.g. e' -> é,
 ;; e` -> è, c, -> ç. Starts off; toggle with C-\ while in an org buffer.
 (add-hook 'org-mode-hook
