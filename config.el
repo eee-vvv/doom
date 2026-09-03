@@ -61,8 +61,8 @@
          :target (file+head "%<%Y-%m-%d>.org"
                             "#+title: %<%Y-%m-%d>\n"))))
 
-(setq org-agenda-skip-scheduled-if-done t)
-(setq org-agenda-skip-deadline-if-done t)
+;; (setq org-agenda-skip-scheduled-if-done t)
+;; (setq org-agenda-skip-deadline-if-done t)
 
 ;; org-habit: consistency graphs in the agenda for tasks with a
 ;; SCHEDULED repeater and a :STYLE: habit property.
@@ -70,7 +70,7 @@
   (require 'org-habit))
 
 (after! org-habit
-  (setq org-habit-preceding-days 28
+  (setq org-habit-preceding-days 30
         org-habit-following-days 2))
 
 ;; Type French accents in org files via ASCII sequences, e.g. e' -> é,
@@ -79,8 +79,6 @@
           (lambda () (setq input-method-title "FR")
             (setq-local default-input-method "french-postfix")))
 
-;; imports
-(load! "nix")
 
 ;; Capture everything to todo.org's Inbox as a TODO item (not Doom's default
 ;; checkbox), so it participates in agenda TODO views/state cycling like the
@@ -92,6 +90,9 @@
                 (file+headline +org-capture-todo-file "Inbox")
                 "* TODO %?\n%i" :prepend t)
               (assoc-delete-all "t" org-capture-templates))))
+
+;; imports
+(load! "nix")
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `with-eval-after-load' block, otherwise Doom's defaults may override your
