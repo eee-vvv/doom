@@ -62,7 +62,7 @@
                             "#+title: %<%Y-%m-%d>\n"))))
 
 ;; (setq org-agenda-skip-scheduled-if-done t)
-;; (setq org-agenda-skip-deadline-if-done t)
+(setq org-agenda-skip-deadline-if-done t)
 
 ;; org-habit: consistency graphs in the agenda for tasks with a
 ;; SCHEDULED repeater and a :STYLE: habit property.
