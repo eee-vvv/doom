@@ -21,12 +21,12 @@
 (defun evie/pi-wg-up ()
   (interactive)
   (async-shell-command
-   (format "sudo wg-quick up /home/evie/.config/wireguard/pi-t480.conf")))
+   (format "sudo wg-quick up pi-%s" (system-name))))
 
 (defun evie/pi-wg-down ()
   (interactive)
   (async-shell-command
-   (format "sudo wg-quick down /home/evie/.config/wireguard/pi-t480.conf")))
+   (format "sudo wg-quick down pi-%s" (system-name))))
 
 (defun evie/thinkcentre-wg-status ()
   (interactive)
