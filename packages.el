@@ -1,5 +1,8 @@
 ;;; $DOOMDIR/packages.el -*- lexical-binding: t; no-byte-compile: t -*-
 
+
+(package! catppuccin-theme)
+
 ;; To install a package:
 ;;
 ;;   1. Declare them here in a `package!' statement,
