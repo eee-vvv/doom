@@ -97,6 +97,14 @@
                 "* TODO %?\n%i" :prepend t)
               (assoc-delete-all "t" org-capture-templates))))
 
+;; java (school labs: maven + junit projects)
+;; :tools (lsp +eglot) is our global LSP backend, and doom's java module
+;; doesn't drive eglot itself, so eglot-java is what actually launches
+;; eclipse.jdt.ls (it bootstraps its own jdtls install on first use).
+(use-package! eglot-java
+  :hook ((java-mode . eglot-java-mode)
+         (java-ts-mode . eglot-java-mode)))
+
 ;; imports
 (load! "nix")
 (load! "lisp/y86-mode")

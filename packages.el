@@ -3,6 +3,10 @@
 
 (package! catppuccin-theme)
 
+;; Doom's :lang java module only wires up lsp-java on the classic lsp-mode
+;; backend; we're on :tools (lsp +eglot), so we bring our own eglot client.
+(package! eglot-java)
+
 ;; To install a package:
 ;;
 ;;   1. Declare them here in a `package!' statement,
