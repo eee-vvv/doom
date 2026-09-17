@@ -97,6 +97,25 @@
                 "* TODO %?\n%i" :prepend t)
               (assoc-delete-all "t" org-capture-templates))))
 
+;; eglot's on-type formatting (triggered via post-self-insert-hook on RET
+;; and `}') races clangd's document sync and clangd rejects it with
+;; "trying to format non-added document", which aborts the edit instead of
+;; falling back to normal indentation. `newline' (evil insert-mode RET)
+;; runs that hook; `evil-open-below' (`o') doesn't, which is why only RET
+;; broke. Telling eglot the server lacks the capability restores normal
+;; indentation on RET.
+(after! eglot
+  (add-to-list 'eglot-ignored-server-capabilities :documentOnTypeFormattingProvider))
+
+;; clangd's on-type formatting was also what continued comments (adding
+;; leading `* ' after RET inside a /** */ block, continuing `// '), so
+;; disabling it above loses that along with the crash. `c-context-line-break'
+;; does the same job natively (break the line, reindent, continue the
+;; comment) without any LSP round-trip. `evil-ret' honors `newline' remaps
+;; via `command-remapping', so this is what fires on RET in insert state.
+(after! cc-mode
+  (define-key c-mode-base-map [remap newline] #'c-context-line-break))
+
 ;; java (school labs: maven + junit projects)
 ;; :tools (lsp +eglot) is our global LSP backend, and doom's java module
 ;; doesn't drive eglot itself, so eglot-java is what actually launches

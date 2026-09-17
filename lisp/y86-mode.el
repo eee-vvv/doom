@@ -53,13 +53,15 @@
 
 ;; --- Tooling: assemble/run against the built `sim/' toolchain -------------
 
+(defconst y86-sim-root "~/school/computer-architecture-3217/y86/sim/"
+  "Path to the y86 `sim/' directory (containing misc/yas).")
+
 (defun y86--sim-root ()
-  "Find the y86 `sim/' directory (the one containing misc/yas) above the
-current buffer's file."
-  (or (locate-dominating-file
-       default-directory
-       (lambda (d) (file-exists-p (expand-file-name "misc/yas" d))))
-      (error "Can't find sim/ (misc/yas) above %s -- build it first with `make -C sim'" default-directory)))
+  "Return `y86-sim-root', erroring if it hasn't been built yet."
+  (let ((root (expand-file-name y86-sim-root)))
+    (unless (file-exists-p (expand-file-name "misc/yas" root))
+      (error "misc/yas not found in %s -- build it first with `make -C sim'" root))
+    root))
 
 (defun y86--tool (relpath)
   (expand-file-name relpath (y86--sim-root)))
