@@ -6,7 +6,7 @@
 (defvar y86-mode-opcodes
   '("halt" "nop" "rrmovq" "cmovle" "cmovl" "cmove" "cmovne" "cmovge" "cmovg"
     "irmovq" "rmmovq" "mrmovq"
-    "addq" "subq" "andq" "xorq" "iaddq"
+    "addq" "subq" "andq" "xorq" "mulq" "iaddq" "isubq"
     "jmp" "jle" "jl" "je" "jne" "jge" "jg"
     "call" "ret" "pushq" "popq")
   "Y86-64 instruction mnemonics.")
