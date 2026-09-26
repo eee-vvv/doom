@@ -39,6 +39,8 @@
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
 (setq doom-theme 'ef-bio)
+(setq ef-themes-to-toggle '(ef-bio ef-light))
+(map! "<f5>" #'ef-themes-toggle)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -126,6 +128,7 @@
 
 ;; imports
 (load! "nix")
+(load! "mail")
 (load! "lisp/y86-mode")
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
