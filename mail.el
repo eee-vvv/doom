@@ -26,7 +26,13 @@
   (setq mu4e-maildir "~/.mail"
         mu4e-update-interval 300 ; poll every 5 min while mu4e is open
         mu4e-context-policy 'pick-first
-        mu4e-compose-context-policy 'ask-if-none)
+        mu4e-compose-context-policy 'ask-if-none
+        ;; The +mbsync flag defaults this to "mbsync --all", but temple is
+        ;; blocked on Temple IT's end (their tenant rejects third-party
+        ;; OAuth2 clients -- see the mutt_oauth2.py comment below). Leaving
+        ;; it out of the periodic poll avoids a spurious error every 5 min;
+        ;; `mbsync temple` still works standalone if that ever gets sorted.
+        mu4e-get-mail-command "mbsync gmail azaspire proton")
 
   ;; azaspire.com is a Google Workspace domain (same infra as gmail.com under
   ;; the hood) but doesn't literally contain "gmail" in the address or

@@ -99,6 +99,30 @@
                 "* TODO %?\n%i" :prepend t)
               (assoc-delete-all "t" org-capture-templates))))
 
+;; Capture a date and a list of exercise names to create a log entry template
+;; in ~/org/lifting.org.
+;; TODO: this can probably be so much fancier and maybe formatted in a way that
+;; allows for more data analysis
+(defvar evie/lifting-exercises
+  '("Squat" "Dead Lift" "Bench Press" "Overhead Press" "Barbell Row" "Accessory")
+  "Completion candidates for the lifting capture template.")
+
+(defun evie/lifting-capture-template ()
+  "Build a lifting log entry: date heading plus one subheading per lift."
+  (let* ((time (org-read-date nil t))
+         (date (format-time-string "%Y-%m-%d %a" time))
+         (lifts (completing-read-multiple "Lifts (comma-separated): "
+                                          evie/lifting-exercises)))
+    (concat "** " date " - %?\n"
+            (mapconcat (lambda (lift) (concat "*** " lift)) lifts "\n")
+            "\n")))
+
+(after! org-capture
+  (add-to-list 'org-capture-templates
+               '("l" "Lifting log" entry
+                 (file+headline "~/org/lifting.org" "Logs")
+                 (function evie/lifting-capture-template))))
+
 ;; eglot's on-type formatting (triggered via post-self-insert-hook on RET
 ;; and `}') races clangd's document sync and clangd rejects it with
 ;; "trying to format non-added document", which aborts the edit instead of
