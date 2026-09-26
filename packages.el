@@ -8,6 +8,11 @@
 ;; backend; we're on :tools (lsp +eglot), so we bring our own eglot client.
 (package! eglot-java)
 
+;; org stuff
+(package! mixed-pitch)
+(package! olivetti)
+(package! org-appear)
+
 ;; To install a package:
 ;;
 ;;   1. Declare them here in a `package!' statement,

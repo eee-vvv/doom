@@ -22,13 +22,39 @@
 ;; accept. For example:
 ;;
 
-;; change font size depending on which host I'm on
-(let ((hostname (system-name)))
-  (if (string= hostname "airlinux")
-      (setq doom-font (font-spec :family "Fira Code" :size 15 :weight 'normal)
-            doom-variable-pitch-font (font-spec :family "Fira Code" :size 15))
-    (setq doom-font (font-spec :family "Fira Code" :size 16 :weight 'normal)
-          doom-variable-pitch-font (font-spec :family "Fira Code" :size 16))))
+(setq doom-font (font-spec :family "Aporetic Sans Mono" :size 15)
+      doom-variable-pitch-font (font-spec :family "Inter" :size 17))
+
+(after! org
+  (setq org-hide-emphasis-markers t
+        org-pretty-entities t
+        org-use-sub-superscripts '{}))
+
+(custom-set-faces!
+  '(org-document-title :height 1.8 :weight bold)
+  '(org-level-1 :height 1.1 :weight bold)
+  '(org-level-2 :height 1.05 :weight semi-bold))
+
+(add-hook! 'org-mode-hook
+  (display-line-numbers-mode -1)
+  (visual-line-mode 1)
+  (setq-local line-spacing 0.2)
+  (mixed-pitch-mode 1)
+  (olivetti-mode 1)
+  (org-appear-mode 1))
+
+(after! mixed-pitch
+  (setq mixed-pitch-set-height t))
+
+(after! olivetti
+  (setq-default olivetti-body-width 90))
+
+(after! org-appear
+  (setq org-appear-autolinks t
+        org-appear-autoentities t
+        org-appear-autosubmarkers t))
+
+
 ;;
 ;; If you or Emacs can't find your font, use 'M-x describe-font' to look them
 ;; up, `M-x eval-region' to execute elisp code, and 'M-x doom/reload-font' to
@@ -86,7 +112,6 @@
 (add-hook 'org-mode-hook
           (lambda () (setq input-method-title "FR")
             (setq-local default-input-method "french-postfix")))
-
 
 ;; Capture everything to todo.org's Inbox as a TODO item (not Doom's default
 ;; checkbox), so it participates in agenda TODO views/state cycling like the
