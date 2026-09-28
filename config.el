@@ -22,8 +22,10 @@
 ;; accept. For example:
 ;;
 
-(setq doom-font (font-spec :family "Aporetic Sans Mono" :size 15)
-      doom-variable-pitch-font (font-spec :family "Inter" :size 17))
+(setq doom-font (font-spec :family "Aporetic Sans Mono"
+                           :size 15)
+      doom-variable-pitch-font (font-spec :family "Inter"
+                                          :size 17))
 
 (after! org
   (setq org-hide-emphasis-markers t

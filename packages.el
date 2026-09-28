@@ -8,6 +8,8 @@
 ;; backend; we're on :tools (lsp +eglot), so we bring our own eglot client.
 (package! eglot-java)
 
+(package! uxntal-mode)
+
 ;; org stuff
 (package! mixed-pitch)
 (package! olivetti)
