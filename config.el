@@ -52,7 +52,7 @@
   (setq-default olivetti-body-width 90))
 
 (after! org-appear
-  (setq org-appear-autolinks t
+  (setq org-appear-autolinks nil
         org-appear-autoentities t
         org-appear-autosubmarkers t))
 
@@ -67,7 +67,7 @@
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
 (setq doom-theme 'ef-bio)
-(setq ef-themes-to-toggle '(ef-bio ef-light))
+(setq modus-themes-to-toggle '(ef-bio ef-light))
 (map! "<f5>" #'ef-themes-toggle)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line

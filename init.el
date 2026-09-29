@@ -14,6 +14,11 @@
 ;;   Alternatively, press 'gd' (or 'C-c c d') on a module to browse its
 ;;   directory (for easy access to its source code).
 
+;; pre-doom load stuff. USE CAREFULLY
+
+;; needed to make evil work with visual lines
+(setq evil-respect-visual-line-mode t)
+
 (doom! :input
        ;;bidi              ; (tfel ot) thgir etirw uoy gnipleh
        ;;chinese
