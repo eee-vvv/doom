@@ -8,7 +8,9 @@
     "irmovq" "rmmovq" "mrmovq"
     "addq" "subq" "andq" "xorq" "mulq" "iaddq" "isubq"
     "jmp" "jle" "jl" "je" "jne" "jge" "jg"
-    "call" "ret" "pushq" "popq")
+    "call" "ret" "pushq" "popq"
+    "tjle" "tjl" "tje" "tjne" "tjge" "tjg"
+    "shaq" "divq" "modq")
   "Y86-64 instruction mnemonics.")
 
 (defvar y86-mode-directives
@@ -45,8 +47,8 @@
   (setq-local comment-start "# ")
   (setq-local comment-end "")
   (setq-local font-lock-defaults '(y86-mode-font-lock-keywords nil t))
-  (setq-local indent-tabs-mode t)
-  (setq-local tab-width 8))
+  (setq-local indent-tabs-mode nil)
+  (setq-local tab-width 4))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.ys\\'" . y86-mode))
@@ -73,8 +75,8 @@
          (default-directory (file-name-directory file))
          (base (file-name-nondirectory (file-name-sans-extension file))))
     (compile (format "%s %s.ys && %s %s %s.yo"
-                      (shell-quote-argument (y86--tool "misc/yas")) base
-                      (shell-quote-argument tool-path) (or flags "") base))))
+                     (shell-quote-argument (y86--tool "misc/yas")) base
+                     (shell-quote-argument tool-path) (or flags "") base))))
 
 (defun y86-assemble ()
   "Assemble the current .ys file with yas."
@@ -83,8 +85,8 @@
   (let* ((file (buffer-file-name))
          (default-directory (file-name-directory file)))
     (compile (format "%s %s"
-                      (shell-quote-argument (y86--tool "misc/yas"))
-                      (shell-quote-argument (file-name-nondirectory file))))))
+                     (shell-quote-argument (y86--tool "misc/yas"))
+                     (shell-quote-argument (file-name-nondirectory file))))))
 
 (defun y86-run-isa ()
   "Assemble + run the ISA simulator (yis) on the current file."

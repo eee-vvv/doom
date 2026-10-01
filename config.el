@@ -150,6 +150,17 @@
                  (file+headline "~/org/lifting.org" "Logs")
                  (function evie/lifting-capture-template))))
 
+;; change eglot default inlay behavior to be off but add a map for
+;; momentary inlay hints
+(after! eglot
+  (add-hook 'eglot-managed-mode-hook #'eglot-inlay-hints-mode-disable-h)
+  (add-hook 'eglot-managed-mode-hook #'evil-normalize-keymaps)
+  (map! :map eglot-mode-map
+        :nv "g h" #'eglot-momentary-inlay-hints))
+
+(defun eglot-inlay-hints-mode-disable-h ()
+  (eglot-inlay-hints-mode -1))
+
 ;; eglot's on-type formatting (triggered via post-self-insert-hook on RET
 ;; and `}') races clangd's document sync and clangd rejects it with
 ;; "trying to format non-added document", which aborts the edit instead of
@@ -168,6 +179,18 @@
 ;; via `command-remapping', so this is what fires on RET in insert state.
 (after! cc-mode
   (define-key c-mode-base-map [remap newline] #'c-context-line-break))
+
+;; `+tree-sitter' remaps c/c++ buffers to `c-ts-mode', which has its own
+;; indent-offset var separate from cc-mode's `c-basic-offset' (which Doom
+;; already sets). Fall back to 4 (matching our .clang-format files) when
+;; there's nothing for dtrt-indent to guess from, e.g. a brand-new file.
+(setq-default c-ts-mode-indent-offset 4)
+
+;; Doom's dtrt-indent (`+guess') skips any buffer inside a project by
+;; default, deferring to editorconfig/.dir-locals instead -- but we don't use
+;; those, so nothing was guessing project C files' indentation and they fell
+;; back to c-ts-mode's raw default of 2. Let it guess in projects too.
+(setq +whitespace-guess-in-projects t)
 
 ;; java (school labs: maven + junit projects)
 ;; :tools (lsp +eglot) is our global LSP backend, and doom's java module
