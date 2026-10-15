@@ -66,8 +66,8 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'ef-bio)
-(setq modus-themes-to-toggle '(ef-bio ef-day))
+(setq doom-theme 'ef-elea-dark)
+(setq modus-themes-to-toggle '(ef-elea-dark ef-day))
 (map! "<f5>" #'ef-themes-toggle)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
@@ -78,8 +78,7 @@
 (after! doom-modeline
   (setq display-time-format "%H:%M"
         display-time-default-load-average nil)
-  (display-time-mode 1)
-  (display-battery-mode 1))
+  (display-time-mode 1))
 
 ;; dashboard stuff
 (setq fancy-splash-image (concat doom-user-dir "emacs-gnu-logo.png"))
