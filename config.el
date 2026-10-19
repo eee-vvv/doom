@@ -125,6 +125,14 @@
                 "* TODO %?\n%i" :prepend t)
               (assoc-delete-all "t" org-capture-templates))))
 
+;; Digital declutter (2026-10-19 to 2026-11-17). Remove once it's over.
+(defun evie/open-declutter ()
+  (interactive)
+  (find-file "~/org/declutter.org"))
+
+(map! :leader
+      :desc "Declutter rules" "o D" #'evie/open-declutter)
+
 ;; Capture a date and a list of exercise names to create a log entry template
 ;; in ~/org/lifting.org.
 ;; TODO: this can probably be so much fancier and maybe formatted in a way that
