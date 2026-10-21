@@ -207,6 +207,46 @@
   :hook ((java-mode . eglot-java-mode)
          (java-ts-mode . eglot-java-mode)))
 
+;; LEETCODE
+(use-package! leetcode
+  :commands (leetcode leetcode-show-problem-by-slug)
+  :config
+  (setq leetcode-prefer-language "python3"
+        leetcode-save-solutions t
+        leetcode-directory "~/school/leetcode")
+
+  ;; upstream bug: the PENDING branch wraps its body in an extra pair of
+  ;; parens, so the first poll signals invalid-function (swallowed by aio)
+  ;; and try/submit hang on "check submission" forever
+  (aio-defun leetcode--api-check-submission (interpret-id problem on-success)
+    (message "LeetCode check submission: %s" (format leetcode--url-check-submission interpret-id))
+    (let* ((title-slug (leetcode-problem-title-slug problem))
+           (problem-id (leetcode-problem-id problem))
+           (url-request-method "GET")
+           (url-request-extra-headers `(,@(aio-await (leetcode--common-extra-headers))
+                                        ,(leetcode--referer (format leetcode--url-problems title-slug))))
+           (response (aio-await (aio-url-retrieve (format leetcode--url-check-submission interpret-id))))
+           (response-status (car response))
+           (response-buffer (cdr response)))
+      (if-let ((error-info (plist-get response-status :error)))
+          (progn
+            (switch-to-buffer response-buffer)
+            (leetcode--warn "LeetCode check submission ERROR: %S" error-info))
+        (let ((result (leetcode--parse-buffer response-buffer)))
+          (let-alist result
+            (pcase .state
+              ((or "PENDING" "STARTED")
+               (aio-await (aio-sleep 0.5))
+               (aio-await (leetcode--api-check-submission interpret-id problem on-success)))
+              ("SUCCESS" (funcall on-success problem-id result))))))))
+
+  ;; evil style bindings under localleader (spc m)
+  (map! :map leetcode-solution-mode-map
+        :localleader
+        "t" #'leetcode-try
+        "s" #'leetcode-submit
+        "r" #'leetcode-restore-layout))
+
 ;; imports
 (load! "nix")
 (load! "mail")

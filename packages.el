@@ -15,6 +15,8 @@
 (package! olivetti)
 (package! org-appear)
 
+(package! leetcode)
+
 ;; To install a package:
 ;;
 ;;   1. Declare them here in a `package!' statement,
