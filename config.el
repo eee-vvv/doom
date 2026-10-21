@@ -240,6 +240,21 @@
                (aio-await (leetcode--api-check-submission interpret-id problem on-success)))
               ("SUCCESS" (funcall on-success problem-id result))))))))
 
+  ;; upstream refresh restores point to the :load-more row, which is still the
+  ;; last line, so the new problems load above point and it looks like nothing
+  ;; happened. jump to the first newly loaded problem instead
+  (defun +leetcode-load-more ()
+    (interactive)
+    (let ((old (length (leetcode--filter (leetcode--problems-rows)))))
+      (aio-wait-for (leetcode--load-more))
+      (with-current-buffer leetcode--buffer-name
+        (goto-char (point-min))
+        (forward-line old)
+        (recenter 0)
+        (message "LeetCode: %d problems loaded" (leetcode-problems-num leetcode--problems)))))
+  (define-key leetcode--load-more-map (kbd "RET") #'+leetcode-load-more)
+  (define-key leetcode--load-more-map [mouse-1] #'+leetcode-load-more)
+
   ;; evil style bindings under localleader (spc m)
   (map! :map leetcode-solution-mode-map
         :localleader
