@@ -66,8 +66,8 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'ef-elea-dark)
-(setq modus-themes-to-toggle '(ef-elea-dark ef-day))
+(setq doom-theme 'ef-autumn)
+(setq modus-themes-to-toggle '(ef-autumn ef-day))
 (map! "<f5>" #'ef-themes-toggle)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
@@ -231,26 +231,26 @@
   ;; parens, so the first poll signals invalid-function (swallowed by aio)
   ;; and try/submit hang on "check submission" forever
   (aio-defun leetcode--api-check-submission (interpret-id problem on-success)
-    (message "LeetCode check submission: %s" (format leetcode--url-check-submission interpret-id))
-    (let* ((title-slug (leetcode-problem-title-slug problem))
-           (problem-id (leetcode-problem-id problem))
-           (url-request-method "GET")
-           (url-request-extra-headers `(,@(aio-await (leetcode--common-extra-headers))
-                                        ,(leetcode--referer (format leetcode--url-problems title-slug))))
-           (response (aio-await (aio-url-retrieve (format leetcode--url-check-submission interpret-id))))
-           (response-status (car response))
-           (response-buffer (cdr response)))
-      (if-let ((error-info (plist-get response-status :error)))
-          (progn
-            (switch-to-buffer response-buffer)
-            (leetcode--warn "LeetCode check submission ERROR: %S" error-info))
-        (let ((result (leetcode--parse-buffer response-buffer)))
-          (let-alist result
-            (pcase .state
-              ((or "PENDING" "STARTED")
-               (aio-await (aio-sleep 0.5))
-               (aio-await (leetcode--api-check-submission interpret-id problem on-success)))
-              ("SUCCESS" (funcall on-success problem-id result))))))))
+             (message "LeetCode check submission: %s" (format leetcode--url-check-submission interpret-id))
+             (let* ((title-slug (leetcode-problem-title-slug problem))
+                    (problem-id (leetcode-problem-id problem))
+                    (url-request-method "GET")
+                    (url-request-extra-headers `(,@(aio-await (leetcode--common-extra-headers))
+                                                 ,(leetcode--referer (format leetcode--url-problems title-slug))))
+                    (response (aio-await (aio-url-retrieve (format leetcode--url-check-submission interpret-id))))
+                    (response-status (car response))
+                    (response-buffer (cdr response)))
+               (if-let ((error-info (plist-get response-status :error)))
+                   (progn
+                     (switch-to-buffer response-buffer)
+                     (leetcode--warn "LeetCode check submission ERROR: %S" error-info))
+                 (let ((result (leetcode--parse-buffer response-buffer)))
+                   (let-alist result
+                     (pcase .state
+                       ((or "PENDING" "STARTED")
+                        (aio-await (aio-sleep 0.5))
+                        (aio-await (leetcode--api-check-submission interpret-id problem on-success)))
+                       ("SUCCESS" (funcall on-success problem-id result))))))))
 
   ;; upstream refresh restores point to the :load-more row, which is still the
   ;; last line, so the new problems load above point and it looks like nothing
