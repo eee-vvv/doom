@@ -66,7 +66,16 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'ef-autumn)
+;; Light/dark follows ~/.config/theme/current, which theme-apply (see
+;; ~/nixos/home/evie.nix) flips and then calls `evie/sync-theme' on the
+;; running daemon.
+(defun evie/system-theme ()
+  (if (equal (file-symlink-p "~/.config/theme/current") "light") 'ef-day 'ef-autumn))
+(defun evie/sync-theme ()
+  (interactive)
+  (mapc #'disable-theme custom-enabled-themes)
+  (load-theme (setq doom-theme (evie/system-theme)) t))
+(setq doom-theme (evie/system-theme))
 (setq modus-themes-to-toggle '(ef-autumn ef-day))
 (map! "<f5>" #'ef-themes-toggle)
 
