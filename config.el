@@ -134,7 +134,7 @@
                 "* TODO %?\n%i" :prepend t)
               (assoc-delete-all "t" org-capture-templates))))
 
-;; Digital declutter (2026-10-19 to 2026-11-17). Remove once it's over.
+;; Digital declutter (2026-11-09 to 2026-12-08). Remove once it's over.
 (defun evie/open-declutter ()
   (interactive)
   (find-file "~/org/declutter.org"))
@@ -232,7 +232,7 @@
 (use-package! leetcode
   :commands (leetcode leetcode-show-problem-by-slug)
   :config
-  (setq leetcode-prefer-language "cpp"
+  (setq leetcode-prefer-language "python3"
         leetcode-save-solutions t
         leetcode-directory "~/school/leetcode")
 
