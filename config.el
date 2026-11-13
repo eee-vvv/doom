@@ -230,7 +230,7 @@
 
 ;; LEETCODE
 (use-package! leetcode
-  :commands (leetcode leetcode-show-problem-by-slug)
+  :commands (leetcode leetcode-show-problem-by-slug +leetcode-goto)
   :config
   (setq leetcode-prefer-language "python3"
         leetcode-save-solutions t
@@ -275,6 +275,214 @@
         (message "LeetCode: %d problems loaded" (leetcode-problems-num leetcode--problems)))))
   (define-key leetcode--load-more-map (kbd "RET") #'+leetcode-load-more)
   (define-key leetcode--load-more-map [mouse-1] #'+leetcode-load-more)
+
+  ;; jump to any problem by number. upstream only looks in the loaded pages
+  ;; (100 at a time), so 2406 meant 24 clicks on [Load More]. on a miss we
+  ;; ask the api for that one problem and add it to the list. this also
+  ;; fixes O / V / C / B and leetcode-daily for problems that aren't loaded
+  (defun +leetcode--parse-question (q)
+    (let-alist q
+      (make-leetcode-problem
+       :status .status :id .questionFrontendId :title .title :title-slug .titleSlug
+       :acceptance (format "%.1f%%" (* .acRate 100)) :difficulty .difficulty
+       :paid-only (eq .paidOnly t)
+       :tags (mapcar (lambda (tg) (alist-get 'slug tg)) .topicTags))))
+
+  (aio-defun +leetcode--search (keyword skip limit)
+    "Fetch a page of questions without touching `leetcode--problems'."
+    (let* ((url-request-method "POST")
+           (url-request-extra-headers `(,leetcode--User-Agent ,leetcode--Content-Type))
+           (url-request-data
+            (leetcode--graphql-payload
+             "problemsetQuestionListV2" leetcode--graphql-problemset-question-list-v2
+             `(("categorySlug" . "all-code-essentials") ("skip" . ,skip) ("limit" . ,limit)
+               ("filters" . ((filterCombineType . "ALL"))) ("searchKeyword" . ,keyword)
+               ("sortBy" . ((sortField . "CUSTOM") (sortOrder . "ASCENDING"))))))
+           (response (aio-await (aio-url-retrieve leetcode--url-graphql)))
+           (buf (cdr response)))
+      (unless (plist-get (car response) :error)
+        (with-current-buffer buf
+          (goto-char url-http-end-of-headers)
+          (let-alist (json-read)
+            (mapcar #'+leetcode--parse-question .data.problemsetQuestionListV2.questions))))))
+
+  (defun +leetcode--fetch-by-id (id)
+    "Find problem ID remotely: search by number, then fall back to the page around it."
+    (let ((match (lambda (ps) (seq-find (lambda (p) (equal (leetcode-problem-id p) id)) ps))))
+      (or (funcall match (aio-wait-for (+leetcode--search id 0 20)))
+          (funcall match (aio-wait-for (+leetcode--search
+                                        "" (max 0 (- (string-to-number id) 50)) 100))))))
+
+  (defadvice! +leetcode--get-problem-by-id-remote-a (fn id)
+    :around #'leetcode--get-problem-by-id
+    (let ((id (format "%s" id)))        ; some callers pass a number from read-number
+      (or (funcall fn id)
+          (when (string-match-p "\\`[0-9]+\\'" id)
+            (message "LeetCode: fetching problem %s..." id)
+            (when-let* ((p (+leetcode--fetch-by-id id)))
+              ;; append without bumping :num so load-more pagination stays intact
+              (setf (leetcode-problems-problems leetcode--problems)
+                    (append (leetcode-problems-problems leetcode--problems) (list p)))
+              p))
+          (user-error "LeetCode: no problem #%s" id))))
+
+  ;; works from anywhere, no need to open the problem list first
+  (aio-defun +leetcode-goto (id)
+    (interactive (list (read-string "LeetCode problem #: ")))
+    (aio-await (leetcode--ensure-login))
+    (aio-await (leetcode-show-problem id)))
+
+  ;; a problem fetched above will come back again once load-more reaches it
+  (defun +leetcode--dedupe ()
+    (setf (leetcode-problems-problems leetcode--problems)
+          (cl-remove-duplicates (leetcode-problems-problems leetcode--problems)
+                                :key #'leetcode-problem-id :test #'equal :from-end t)))
+  (advice-add #'leetcode-refresh :before #'+leetcode--dedupe)
+
+  ;; better result buffers. upstream try gives one PASS/FAIL for the whole run
+  ;; and dumps all outputs then all expecteds with no inputs, submit crashes
+  ;; on nil percentiles, and unknown status codes show nothing
+  (defun +leetcode--fmt-num (fmt x) (if (numberp x) (format fmt x) "?"))
+
+  (defun +leetcode--heading (ok text)
+    (insert (propertize text 'face `(:inherit ,(if ok 'leetcode-accepted-face 'leetcode-error-face)
+                                     :weight bold :height 1.3))
+            "\n\n"))
+
+  (defun +leetcode--field (label value)
+    (when (and value (not (equal value "")))
+      (insert (propertize label 'face 'font-lock-comment-face) "\n"
+              (string-trim-right (format "%s" value)) "\n\n")))
+
+  (defun +leetcode--add-testcase-button (problem-id input)
+    (when (and input (not (string-empty-p input)))
+      (insert-text-button "[Add to testcases]"
+                          'action (lambda (_)
+                                    (with-current-buffer (leetcode--testcase-buffer-name problem-id)
+                                      (goto-char (point-max))
+                                      (unless (bolp) (insert "\n"))
+                                      (insert (string-trim input) "\n"))
+                                    (message "LeetCode: added failing case to testcases"))
+                          'follow-link t)
+      (insert "\n\n")))
+
+  (defun +leetcode--result-buffer (problem-id)
+    (let ((buf (get-buffer-create (leetcode--result-buffer-name problem-id))))
+      (with-current-buffer buf
+        (let ((inhibit-read-only t)) (erase-buffer))
+        (setq-local truncate-lines nil)
+        (visual-line-mode +1))
+      buf))
+
+  (defun leetcode--show-testcases-result (problem-id result)
+    (let-alist result
+      (with-current-buffer (+leetcode--result-buffer problem-id)
+        (pcase .status_code
+          (10
+           (let* ((n (or .total_testcases (length .expected_code_answer)))
+                  (lines (split-string (string-trim-right
+                                        (leetcode--testcase-buffer-data problem-id))
+                                       "\n"))
+                  (per (and (> n 0) (zerop (% (length lines) n)) (/ (length lines) n)))
+                  (bits (and (stringp .compare_result) (= (length .compare_result) n)
+                             .compare_result))
+                  (passed 0))
+             (dotimes (i n)
+               (when (if bits (eq (aref bits i) ?1)
+                       (equal (elt .code_answer i) (elt .expected_code_answer i)))
+                 (cl-incf passed)))
+             (+leetcode--heading (= passed n) (format "%s  %d/%d passed"
+                                                     (if (= passed n) "✓ PASS" "✗ FAIL")
+                                                     passed n))
+             (+leetcode--field "Runtime" .status_runtime)
+             (dotimes (i n)
+               (let* ((out (elt .code_answer i))
+                      (exp (elt .expected_code_answer i))
+                      (ok (if bits (eq (aref bits i) ?1) (equal out exp))))
+                 (insert (propertize (format "%s Case %d" (if ok "✓" "✗") (1+ i))
+                                     'face `(:inherit ,(if ok 'leetcode-accepted-face 'leetcode-error-face)
+                                             :weight bold))
+                         "\n")
+                 (when per
+                   (insert (propertize "  input     " 'face 'font-lock-comment-face)
+                           (string-join (seq-subseq lines (* i per) (* (1+ i) per)) "\n            ")
+                           "\n"))
+                 (insert (propertize "  output    " 'face 'font-lock-comment-face) (format "%s" out) "\n")
+                 (unless ok
+                   (insert (propertize "  expected  " 'face 'font-lock-comment-face)
+                           (propertize (format "%s" exp) 'face 'leetcode-accepted-face) "\n"))
+                 (let ((so (elt .std_output_list i)))
+                   (when (and so (not (string-empty-p so)))
+                     (insert (propertize "  stdout\n" 'face 'font-lock-comment-face)
+                             (replace-regexp-in-string "^" "    " (string-trim-right so)) "\n")))
+                 (insert "\n")))
+             (message "LeetCode try: %d/%d passed" passed n)))
+          ((or 12 13 14)
+           (+leetcode--heading nil .status_msg)
+           (+leetcode--field "Last test case" .last_testcase)
+           (+leetcode--field "Expected" .expected_output)
+           (+leetcode--field "Stdout" .std_output)
+           (message "LeetCode try: %s" .status_msg))
+          (15
+           (+leetcode--heading nil .status_msg)
+           (+leetcode--field "Error" .full_runtime_error)
+           (+leetcode--field "Last test case" .last_testcase)
+           (+leetcode--field "Stdout" (and (sequencep .std_output_list)
+                                           (string-join (append .std_output_list nil) "")))
+           (message "LeetCode try: %s" .status_msg))
+          (20
+           (+leetcode--heading nil .status_msg)
+           (+leetcode--field "Error" .full_compile_error)
+           (message "LeetCode try: %s" .status_msg))
+          (_
+           (+leetcode--heading nil (format "%s (status %s)" .status_msg .status_code))
+           (insert (pp-to-string result))))
+        (goto-char (point-min)))))
+
+  (defun leetcode--show-submission-result (problem-id result)
+    (let-alist result
+      (with-current-buffer (+leetcode--result-buffer problem-id)
+        (let ((progress (format "%s/%s testcases" .total_correct .total_testcases)))
+          (pcase .status_code
+            (10
+             (+leetcode--heading t (format "✓ %s  %s" .status_msg progress))
+             (insert (format "Runtime  %-10s beats %s%%\n"
+                             .status_runtime (+leetcode--fmt-num "%.1f" .runtime_percentile))
+                     (format "Memory   %-10s beats %s%%\n\n"
+                             .status_memory (+leetcode--fmt-num "%.1f" .memory_percentile)))
+             (message "LeetCode: ✓ Accepted  %s (beats %s%%)  %s (beats %s%%)"
+                      .status_runtime (+leetcode--fmt-num "%.0f" .runtime_percentile)
+                      .status_memory (+leetcode--fmt-num "%.0f" .memory_percentile)))
+            (11
+             (+leetcode--heading nil (format "✗ %s  %s" .status_msg progress))
+             (let ((input (or .last_testcase .input)))
+               (+leetcode--field "Input" input)
+               (+leetcode--field "Output" .code_output)
+               (insert (propertize "Expected" 'face 'font-lock-comment-face) "\n"
+                       (propertize (format "%s" .expected_output) 'face 'leetcode-accepted-face)
+                       "\n\n")
+               (+leetcode--field "Stdout" .std_output)
+               (+leetcode--add-testcase-button problem-id input))
+             (message "LeetCode: ✗ Wrong Answer (%s)" progress))
+            ((or 12 13 14 15)
+             (+leetcode--heading nil (format "✗ %s  %s" .status_msg progress))
+             (+leetcode--field "Error" .full_runtime_error)
+             (+leetcode--field "Last test case" .last_testcase)
+             (+leetcode--field "Expected" .expected_output)
+             (+leetcode--field "Stdout" .std_output)
+             (+leetcode--add-testcase-button problem-id .last_testcase)
+             (message "LeetCode: ✗ %s (%s)" .status_msg progress))
+            (20
+             (+leetcode--heading nil (format "✗ %s" .status_msg))
+             (+leetcode--field "Error" .full_compile_error)
+             (message "LeetCode: ✗ %s" .status_msg))
+            (_
+             (+leetcode--heading nil (format "%s (status %s)" .status_msg .status_code))
+             (insert (pp-to-string result)))))
+        (goto-char (point-min))
+        (display-buffer (current-buffer)
+                        '((display-buffer-reuse-window leetcode--display-result)
+                          (reusable-frames . visible))))))
 
   ;; evil style bindings under localleader (spc m)
   (map! :map leetcode-solution-mode-map
