@@ -567,3 +567,15 @@ the scrollback (like `clear -x' vs `clear')."
         "e" #'evil-ghostel-toggle-send-escape
         "n" #'ghostel-next-prompt
         "p" #'ghostel-previous-prompt))
+
+;; ghostel's pixel anchor bottom-aligns the grid, so when the window height
+;; isn't an exact multiple of the line height the leftover pixels at the top
+;; show a sliver of scrollback (e.g. the previous `$' after C-l). Returning nil
+;; here makes `ghostel--anchor-window' fall back to whole-line anchoring: the
+;; first grid row sits at the window top and the spare pixels go below the last
+;; row, like a real terminal.
+(after! ghostel
+  (defadvice! +evie/ghostel-no-scrollback-peek-a (&rest _)
+    :override #'ghostel--balance-top-pad
+    (ghostel--top-pad-set 0)
+    nil))
