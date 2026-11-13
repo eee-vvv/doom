@@ -327,7 +327,10 @@
           (user-error "LeetCode: no problem #%s" id))))
 
   ;; works from anywhere, no need to open the problem list first
+  ;; the docstring is load-bearing: without one aio-defun buries
+  ;; (interactive) in the body and the function isn't a command
   (aio-defun +leetcode-goto (id)
+    "Open LeetCode problem number ID, fetching it if it isn't loaded."
     (interactive (list (read-string "LeetCode problem #: ")))
     (aio-await (leetcode--ensure-login))
     (aio-await (leetcode-show-problem id)))
@@ -526,3 +529,41 @@
 ;;
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
+
+;;; ghostel: make it behave like a normal terminal
+;; In evil insert/normal state these keys go straight to the shell instead of
+;; being eaten by Emacs/evil. The ghostel commands that lived under C-c move to
+;; the localleader (SPC m) in normal state. Emacs state is untouched, so `C-c C-c'
+;; etc. still work there.
+(after! evil-ghostel
+  (defun +evie/ghostel-clear (&optional scrollback)
+    "Clear like a normal terminal: push the screen into scrollback and
+redraw the prompt at the top of the window. With prefix arg, also wipe
+the scrollback (like `clear -x' vs `clear')."
+    (interactive "P")
+    (if scrollback (ghostel-clear-scrollback) (ghostel-clear))
+    ;; normal state lets the window roam into scrollback; insert follows the
+    ;; live cursor, so the cleared screen is what you see
+    (unless (evil-insert-state-p) (evil-insert-state)))
+
+  (defun +evie/ghostel-send-C-c ()
+    "Send ^C to the shell (and drop back to insert state)."
+    (interactive)
+    (ghostel-send-key "c" "ctrl")
+    (unless (evil-insert-state-p) (evil-insert-state)))
+
+  (map! :map evil-ghostel-mode-map
+        :ni "C-l" #'+evie/ghostel-clear
+        :ni "C-c" #'+evie/ghostel-send-C-c
+        ;; job control (evil would otherwise toggle emacs state)
+        :i  "C-z" (cmd! (ghostel-send-key "z" "ctrl"))
+        :localleader
+        "l" #'ghostel-line-mode
+        "c" #'ghostel-copy-mode
+        "y" #'ghostel-copy-all
+        "k" #'ghostel-clear-scrollback
+        "q" #'ghostel-send-next-key
+        "d" #'ghostel-char-mode
+        "e" #'evil-ghostel-toggle-send-escape
+        "n" #'ghostel-next-prompt
+        "p" #'ghostel-previous-prompt))
