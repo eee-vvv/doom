@@ -306,6 +306,14 @@
           (let-alist (json-read)
             (mapcar #'+leetcode--parse-question .data.problemsetQuestionListV2.questions))))))
 
+  ;; no `setf' on the struct accessor here: doom eager-macroexpands this file
+  ;; before leetcode.el loads, so setf doesn't know the accessor yet and
+  ;; expands to a call to the nonexistent function `(setf
+  ;; leetcode-problems-problems)'. aio swallows that error, so the fetch just
+  ;; looks hung. set the slot with plain functions that resolve at runtime
+  (defun +leetcode--set-problems (ps)
+    (aset leetcode--problems (cl-struct-slot-offset 'leetcode-problems 'problems) ps))
+
   ;; this has to stay async. the callers are aio coroutines that usually
   ;; resume inside a url.el callback (e.g. right after the login request),
   ;; and blocking there with `aio-wait-for' deadlocks: url.el reuses the
@@ -323,8 +331,8 @@
                                                   (+leetcode--search
                                                    "" (max 0 (- (string-to-number id) 50)) 100))))))
               ;; append without bumping :num so load-more pagination stays intact
-              (setf (leetcode-problems-problems leetcode--problems)
-                    (append (leetcode-problems-problems leetcode--problems) (list p)))
+              (+leetcode--set-problems
+               (append (leetcode-problems-problems leetcode--problems) (list p)))
               p))
           (user-error "LeetCode: no problem #%s" id))))
 
@@ -357,7 +365,7 @@
 
   ;; a problem fetched above will come back again once load-more reaches it
   (defun +leetcode--dedupe ()
-    (setf (leetcode-problems-problems leetcode--problems)
+    (+leetcode--set-problems
           (cl-remove-duplicates (leetcode-problems-problems leetcode--problems)
                                 :key #'leetcode-problem-id :test #'equal :from-end t)))
   (advice-add #'leetcode-refresh :before #'+leetcode--dedupe)
