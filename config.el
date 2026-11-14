@@ -306,25 +306,45 @@
           (let-alist (json-read)
             (mapcar #'+leetcode--parse-question .data.problemsetQuestionListV2.questions))))))
 
-  (defun +leetcode--fetch-by-id (id)
-    "Find problem ID remotely: search by number, then fall back to the page around it."
-    (let ((match (lambda (ps) (seq-find (lambda (p) (equal (leetcode-problem-id p) id)) ps))))
-      (or (funcall match (aio-wait-for (+leetcode--search id 0 20)))
-          (funcall match (aio-wait-for (+leetcode--search
-                                        "" (max 0 (- (string-to-number id) 50)) 100))))))
-
-  (defadvice! +leetcode--get-problem-by-id-remote-a (fn id)
-    :around #'leetcode--get-problem-by-id
-    (let ((id (format "%s" id)))        ; some callers pass a number from read-number
-      (or (funcall fn id)
+  ;; this has to stay async. the callers are aio coroutines that usually
+  ;; resume inside a url.el callback (e.g. right after the login request),
+  ;; and blocking there with `aio-wait-for' deadlocks: url.el reuses the
+  ;; keep-alive connection whose filter is still on the stack, so the
+  ;; nested request never gets its response ("Contacting host" forever)
+  (aio-defun +leetcode--ensure-problem (id)
+    "Make sure problem ID is in `leetcode--problems', fetching it if needed."
+    (let ((id (format "%s" id))
+          (match (lambda (id ps) (seq-find (lambda (p) (equal (leetcode-problem-id p) id)) ps))))
+      (or (funcall match id (leetcode-problems-problems leetcode--problems))
           (when (string-match-p "\\`[0-9]+\\'" id)
             (message "LeetCode: fetching problem %s..." id)
-            (when-let* ((p (+leetcode--fetch-by-id id)))
+            (when-let* ((p (or (funcall match id (aio-await (+leetcode--search id 0 20)))
+                               (funcall match id (aio-await
+                                                  (+leetcode--search
+                                                   "" (max 0 (- (string-to-number id) 50)) 100))))))
               ;; append without bumping :num so load-more pagination stays intact
               (setf (leetcode-problems-problems leetcode--problems)
                     (append (leetcode-problems-problems leetcode--problems) (list p)))
               p))
           (user-error "LeetCode: no problem #%s" id))))
+
+  ;; prefetch before the upstream commands look the problem up. the aio
+  ;; ones get an async wrapper; the browser one is a plain command run from
+  ;; the command loop, where blocking is safe
+  (aio-defun +leetcode--ensure-problem-a (fn id &rest args)
+    (aio-await (+leetcode--ensure-problem id))
+    (aio-await (apply fn (format "%s" id) args)))
+  (advice-add #'leetcode-show-problem :around #'+leetcode--ensure-problem-a)
+  (advice-add #'leetcode-solve-problem :around #'+leetcode--ensure-problem-a)
+
+  (defadvice! +leetcode--ensure-problem-sync-a (id)
+    :before #'leetcode-show-problem-in-browser
+    (aio-wait-for (+leetcode--ensure-problem id)))
+
+  ;; some callers pass a number from read-number, upstream compares with equal
+  (defadvice! +leetcode--get-problem-by-id-string-a (fn id)
+    :around #'leetcode--get-problem-by-id
+    (funcall fn (format "%s" id)))
 
   ;; works from anywhere, no need to open the problem list first
   ;; the docstring is load-bearing: without one aio-defun buries
