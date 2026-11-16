@@ -349,6 +349,18 @@
     :before #'leetcode-show-problem-in-browser
     (aio-wait-for (+leetcode--ensure-problem id)))
 
+  ;; upstream rebuilds the slug from the title, which breaks on titles like
+  ;; 2034's "Stock Price Fluctuation " (trailing space -> "...-fluctuation-").
+  ;; the code-buffer lookup then gets nil and solve dies right after splitting
+  ;; the windows, leaving the description in all four. use the real slug
+  (defadvice! +leetcode--real-slug-a (fn title)
+    :around #'leetcode--slugify-title
+    (or (when-let* ((ps (and (boundp 'leetcode--problems) leetcode--problems
+                             (leetcode-problems-problems leetcode--problems)))
+                    (p (seq-find (lambda (p) (equal (leetcode-problem-title p) title)) ps)))
+          (leetcode-problem-title-slug p))
+        (replace-regexp-in-string "\\`-+\\|-+\\'" "" (funcall fn (string-trim title)))))
+
   ;; some callers pass a number from read-number, upstream compares with equal
   (defadvice! +leetcode--get-problem-by-id-string-a (fn id)
     :around #'leetcode--get-problem-by-id
