@@ -289,22 +289,22 @@
        :tags (mapcar (lambda (tg) (alist-get 'slug tg)) .topicTags))))
 
   (aio-defun +leetcode--search (keyword skip limit)
-    "Fetch a page of questions without touching `leetcode--problems'."
-    (let* ((url-request-method "POST")
-           (url-request-extra-headers `(,leetcode--User-Agent ,leetcode--Content-Type))
-           (url-request-data
-            (leetcode--graphql-payload
-             "problemsetQuestionListV2" leetcode--graphql-problemset-question-list-v2
-             `(("categorySlug" . "all-code-essentials") ("skip" . ,skip) ("limit" . ,limit)
-               ("filters" . ((filterCombineType . "ALL"))) ("searchKeyword" . ,keyword)
-               ("sortBy" . ((sortField . "CUSTOM") (sortOrder . "ASCENDING"))))))
-           (response (aio-await (aio-url-retrieve leetcode--url-graphql)))
-           (buf (cdr response)))
-      (unless (plist-get (car response) :error)
-        (with-current-buffer buf
-          (goto-char url-http-end-of-headers)
-          (let-alist (json-read)
-            (mapcar #'+leetcode--parse-question .data.problemsetQuestionListV2.questions))))))
+             "Fetch a page of questions without touching `leetcode--problems'."
+             (let* ((url-request-method "POST")
+                    (url-request-extra-headers `(,leetcode--User-Agent ,leetcode--Content-Type))
+                    (url-request-data
+                     (leetcode--graphql-payload
+                      "problemsetQuestionListV2" leetcode--graphql-problemset-question-list-v2
+                      `(("categorySlug" . "all-code-essentials") ("skip" . ,skip) ("limit" . ,limit)
+                        ("filters" . ((filterCombineType . "ALL"))) ("searchKeyword" . ,keyword)
+                        ("sortBy" . ((sortField . "CUSTOM") (sortOrder . "ASCENDING"))))))
+                    (response (aio-await (aio-url-retrieve leetcode--url-graphql)))
+                    (buf (cdr response)))
+               (unless (plist-get (car response) :error)
+                 (with-current-buffer buf
+                   (goto-char url-http-end-of-headers)
+                   (let-alist (json-read)
+                     (mapcar #'+leetcode--parse-question .data.problemsetQuestionListV2.questions))))))
 
   ;; no `setf' on the struct accessor here: doom eager-macroexpands this file
   ;; before leetcode.el loads, so setf doesn't know the accessor yet and
@@ -320,28 +320,28 @@
   ;; keep-alive connection whose filter is still on the stack, so the
   ;; nested request never gets its response ("Contacting host" forever)
   (aio-defun +leetcode--ensure-problem (id)
-    "Make sure problem ID is in `leetcode--problems', fetching it if needed."
-    (let ((id (format "%s" id))
-          (match (lambda (id ps) (seq-find (lambda (p) (equal (leetcode-problem-id p) id)) ps))))
-      (or (funcall match id (leetcode-problems-problems leetcode--problems))
-          (when (string-match-p "\\`[0-9]+\\'" id)
-            (message "LeetCode: fetching problem %s..." id)
-            (when-let* ((p (or (funcall match id (aio-await (+leetcode--search id 0 20)))
-                               (funcall match id (aio-await
-                                                  (+leetcode--search
-                                                   "" (max 0 (- (string-to-number id) 50)) 100))))))
-              ;; append without bumping :num so load-more pagination stays intact
-              (+leetcode--set-problems
-               (append (leetcode-problems-problems leetcode--problems) (list p)))
-              p))
-          (user-error "LeetCode: no problem #%s" id))))
+             "Make sure problem ID is in `leetcode--problems', fetching it if needed."
+             (let ((id (format "%s" id))
+                   (match (lambda (id ps) (seq-find (lambda (p) (equal (leetcode-problem-id p) id)) ps))))
+               (or (funcall match id (leetcode-problems-problems leetcode--problems))
+                   (when (string-match-p "\\`[0-9]+\\'" id)
+                     (message "LeetCode: fetching problem %s..." id)
+                     (when-let* ((p (or (funcall match id (aio-await (+leetcode--search id 0 20)))
+                                        (funcall match id (aio-await
+                                                           (+leetcode--search
+                                                            "" (max 0 (- (string-to-number id) 50)) 100))))))
+                       ;; append without bumping :num so load-more pagination stays intact
+                       (+leetcode--set-problems
+                        (append (leetcode-problems-problems leetcode--problems) (list p)))
+                       p))
+                   (user-error "LeetCode: no problem #%s" id))))
 
   ;; prefetch before the upstream commands look the problem up. the aio
   ;; ones get an async wrapper; the browser one is a plain command run from
   ;; the command loop, where blocking is safe
   (aio-defun +leetcode--ensure-problem-a (fn id &rest args)
-    (aio-await (+leetcode--ensure-problem id))
-    (aio-await (apply fn (format "%s" id) args)))
+             (aio-await (+leetcode--ensure-problem id))
+             (aio-await (apply fn (format "%s" id) args)))
   (advice-add #'leetcode-show-problem :around #'+leetcode--ensure-problem-a)
   (advice-add #'leetcode-solve-problem :around #'+leetcode--ensure-problem-a)
 
@@ -370,16 +370,16 @@
   ;; the docstring is load-bearing: without one aio-defun buries
   ;; (interactive) in the body and the function isn't a command
   (aio-defun +leetcode-goto (id)
-    "Open LeetCode problem number ID, fetching it if it isn't loaded."
-    (interactive (list (read-string "LeetCode problem #: ")))
-    (aio-await (leetcode--ensure-login))
-    (aio-await (leetcode-show-problem id)))
+             "Open LeetCode problem number ID, fetching it if it isn't loaded."
+             (interactive (list (read-string "LeetCode problem #: ")))
+             (aio-await (leetcode--ensure-login))
+             (aio-await (leetcode-show-problem id)))
 
   ;; a problem fetched above will come back again once load-more reaches it
   (defun +leetcode--dedupe ()
     (+leetcode--set-problems
-          (cl-remove-duplicates (leetcode-problems-problems leetcode--problems)
-                                :key #'leetcode-problem-id :test #'equal :from-end t)))
+     (cl-remove-duplicates (leetcode-problems-problems leetcode--problems)
+                           :key #'leetcode-problem-id :test #'equal :from-end t)))
   (advice-add #'leetcode-refresh :before #'+leetcode--dedupe)
 
   ;; better result buffers. upstream try gives one PASS/FAIL for the whole run
@@ -435,8 +435,8 @@
                        (equal (elt .code_answer i) (elt .expected_code_answer i)))
                  (cl-incf passed)))
              (+leetcode--heading (= passed n) (format "%s  %d/%d passed"
-                                                     (if (= passed n) "✓ PASS" "✗ FAIL")
-                                                     passed n))
+                                                      (if (= passed n) "✓ PASS" "✗ FAIL")
+                                                      passed n))
              (+leetcode--field "Runtime" .status_runtime)
              (dotimes (i n)
                (let* ((out (elt .code_answer i))
@@ -619,3 +619,11 @@ the scrollback (like `clear -x' vs `clear')."
     :override #'ghostel--balance-top-pad
     (ghostel--top-pad-set 0)
     nil))
+
+;;; dirvish
+
+(with-eval-after-load 'dirvish
+  (setopt dirvish-quick-access-entries
+          `(("h" "~/"               "Home")
+            ("s" "~/school/"         "School")
+            ("d" "~/Downloads/"     "Downloads"))))
